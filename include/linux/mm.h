@@ -3400,6 +3400,9 @@ extern int do_vmi_munmap(struct vma_iterator *vmi, struct mm_struct *mm,
 extern int do_munmap(struct mm_struct *, unsigned long, size_t,
 		     struct list_head *uf);
 extern int do_madvise(struct mm_struct *mm, unsigned long start, size_t len_in, int behavior);
+#ifdef CONFIG_HORIZON
+extern unsigned long do_brk(unsigned long brk);
+#endif
 
 #ifdef CONFIG_MMU
 extern int do_vma_munmap(struct vma_iterator *vmi, struct vm_area_struct *vma,
@@ -3422,6 +3425,11 @@ extern int vm_munmap(unsigned long, size_t);
 extern unsigned long __must_check vm_mmap(struct file *, unsigned long,
         unsigned long, unsigned long,
         unsigned long, unsigned long);
+#ifdef CONFIG_HORIZON
+extern unsigned long vm_mremap(unsigned long addr, unsigned long old_len,
+		unsigned long new_len, unsigned long flags,
+		unsigned long new_addr);
+#endif
 
 struct vm_unmapped_area_info {
 #define VM_UNMAPPED_AREA_TOPDOWN 1

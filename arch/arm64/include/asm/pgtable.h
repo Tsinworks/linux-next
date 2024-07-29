@@ -292,7 +292,28 @@ static inline pte_t __ptep_get(pte_t *ptep)
 
 extern void __sync_icache_dcache(pte_t pteval);
 bool pgattr_change_is_safe(u64 old, u64 new);
+#ifdef CONFIG_HAVE_ARCH_SOFT_DIRTY
+static inline bool pte_soft_dirty(pte_t pte)
+{
+	return pte_sw_dirty(pte);
+}
+//#define pte_swp_soft_dirty pte_soft_dirty
 
+static inline pte_t pte_mksoft_dirty(pte_t pte)
+{
+	pte = pte_mkdirty(pte);
+	return pte;
+}
+//#define pte_swp_mksoft_dirty pte_mksoft_dirty
+
+static inline pte_t pte_clear_soft_dirty(pte_t pte)
+{
+	pte = clear_pte_bit(pte, __pgprot(PTE_DIRTY));
+	return pte;
+}
+//#define pte_swp_clear_soft_dirty pte_clear_soft_dirty
+
+#endif /* CONFIG_HAVE_ARCH_SOFT_DIRTY */
 /*
  * PTE bits configuration in the presence of hardware Dirty Bit Management
  * (PTE_WRITE == PTE_DBM):
@@ -1251,10 +1272,12 @@ static inline pmd_t pmdp_establish(struct vm_area_struct *vma,
  *	bits 3-7:	swap type
  *	bits 8-57:	swap offset
  *	bit  58:	PTE_PROT_NONE (must be zero)
+ *	bit  59:	swap software dirty tracking
  */
 #define __SWP_TYPE_SHIFT	3
 #define __SWP_TYPE_BITS		5
 #define __SWP_OFFSET_BITS	50
+#define __SWP_PROT_NONE_BITS	1
 #define __SWP_TYPE_MASK		((1 << __SWP_TYPE_BITS) - 1)
 #define __SWP_OFFSET_SHIFT	(__SWP_TYPE_BITS + __SWP_TYPE_SHIFT)
 #define __SWP_OFFSET_MASK	((1UL << __SWP_OFFSET_BITS) - 1)
@@ -1271,6 +1294,28 @@ static inline pmd_t pmdp_establish(struct vm_area_struct *vma,
 #define __swp_entry_to_pmd(swp)		__pmd((swp).val)
 #endif /* CONFIG_ARCH_ENABLE_THP_MIGRATION */
 
+#ifdef CONFIG_MEM_SOFT_DIRTY
+#define _PAGE_SWP_SOFT_DIRTY   (1UL << (__SWP_OFFSET_SHIFT + __SWP_OFFSET_BITS + __SWP_PROT_NONE_BITS))
+#else
+#define _PAGE_SWP_SOFT_DIRTY    0UL
+#endif /* CONFIG_MEM_SOFT_DIRTY */
+
+#ifdef CONFIG_HAVE_ARCH_SOFT_DIRTY
+static inline bool pte_swp_soft_dirty(pte_t pte)
+{
+        return !!(pte_val(pte) & _PAGE_SWP_SOFT_DIRTY);
+}
+
+static inline pte_t pte_swp_mksoft_dirty(pte_t pte)
+{
+        return __pte(pte_val(pte) | _PAGE_SWP_SOFT_DIRTY);
+}
+
+static inline pte_t pte_swp_clear_soft_dirty(pte_t pte)
+{
+        return __pte(pte_val(pte) & ~_PAGE_SWP_SOFT_DIRTY);
+}
+#endif /* CONFIG_HAVE_ARCH_SOFT_DIRTY */
 /*
  * Ensure that there are not more swap files than can be encoded in the kernel
  * PTEs.

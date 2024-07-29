@@ -845,6 +845,24 @@ __SYSCALL(__NR_lsm_list_modules, sys_lsm_list_modules)
 #undef __NR_syscalls
 #define __NR_syscalls 462
 
+#ifndef __NO_HORIZON
+#define __NR_horizon_execve 500
+__SYSCALL(__NR_horizon_execve, sys_horizon_execve)
+#define __NR_horizon_execveat 501
+__SYSCALL(__NR_horizon_execveat, sys_horizon_execveat)
+
+#define __NR_horizon_servctl 502
+__SYSCALL(__NR_horizon_servctl, sys_horizon_servctl)
+#endif
+
+#undef __NR_syscalls
+
+#ifndef __NO_HORIZON
+#define __NR_syscalls (__NR_horizon_servctl + 1)
+#else
+#define __NR_syscalls 462
+#endif
+
 /*
  * 32 bit systems traditionally used different
  * syscalls for off_t and loff_t arguments, while

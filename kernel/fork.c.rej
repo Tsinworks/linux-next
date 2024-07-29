@@ -1,0 +1,22 @@
+diff a/kernel/fork.c b/kernel/fork.c	(rejected hunks)
+@@ -97,7 +97,7 @@
+ #include <linux/scs.h>
+ #include <linux/io_uring.h>
+ #include <linux/bpf.h>
+-
++#include <linux/horizon.h>
+ #include <asm/pgalloc.h>
+ #include <linux/uaccess.h>
+ #include <asm/mmu_context.h>
+@@ -1991,7 +2018,11 @@ static void rv_task_fork(struct task_struct *p)
+  * parts of the process environment (as per the clone
+  * flags). The actual kick-off is left to the caller.
+  */
++#ifdef CONFIG_HORIZON
++__latent_entropy struct task_struct *copy_process(
++#else
+ static __latent_entropy struct task_struct *copy_process(
++#endif
+ 					struct pid *pid,
+ 					int trace,
+ 					int node,
